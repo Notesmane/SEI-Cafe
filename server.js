@@ -1,3 +1,6 @@
+// assignment page: https://perscholas.instructure.com/courses/1513/pages/week-14-day-3?module_item_id=966139
+// you can also refer to the MERN-InfraStructure project
+
 const express = require("express");
 const path = require("path");
 const favicon = require("serve-favicon");
@@ -25,6 +28,11 @@ app.use(express.static(path.join(__dirname, "build")));
 //^ Routes
 // Put API routes here, before the "catch all" route
 app.use('/api/users', require('./routes/api/users'));
+
+// Protect the API routes below from anonymous users
+const ensureLoggedIn = require('./config/ensureLoggedIn');
+app.use('/api/items', ensureLoggedIn, require('./routes/api/items'));
+app.use('/api/orders', ensureLoggedIn, require('./routes/api/orders'));
 
 
 // The following "catch all" route (note the *) is necessary

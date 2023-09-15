@@ -1,53 +1,48 @@
-const User = require('../../models/User');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcrypt');
+const User = require('../../models/user');
 
-// create a new user in the db
+module.exports = {
+  create,
+  login
+};
+
 async function create(req, res) {
-
-    try {
-        const user = await User.create(req.body);
-
-        // create a new token
-        const token = createJWT(user);
-        res.json(token);
-
-    } catch (error) {
-        res.status(400).json(error);
-    }
+  try {
+    // Add the user to the db
+    const user = await User.create(req.body);
+    // token will be a string
+    const token = createJWT(user);
+    // Yes, we can serialize a string
+    res.status(200).json(token);
+  } catch (e) {
+    // Probably a dup email
+    res.status(400).json({ msg: e.message});
+  }
 }
 
 async function login(req, res) {
-    try {
-      // find a user by email
-      const user = await User.findOne({ email: req.body.email });
-      if (!user) throw new Error();
-  
-      // comparing password
-      const match = await bcrypt.compare(req.body.password, user.password);
-      if (!match) throw new Error();
-  
-      // create new token
-      const token = createJWT(user);
-      res.json(token);
-  
-    } catch (error) {
-      console.log(error);
-      res.status(400).json(error);
-    }
+  try {
+    // Find the user by their email address
+    const user = await User.findOne({email: req.body.email});
+    if (!user) throw new Error();
+    // Check if the password matches
+    const match = await bcrypt.compare(req.body.password, user.password);
+    if (!match) throw new Error();
+    res.status(200).json( createJWT(user) );
+  } catch(e) {
+    res.status(400).json({ msg: e.message, reason: 'Bad Credentials' });
   }
-  
-
-async function checkToken(req, res) {
-  console.log('req.user', req.user);
-  res.json(req.exp);
 }
 
-// helper function to create a jwt token
+
+/* Helper Functions */
+
 function createJWT(user) {
-    return jwt.sign({user}, process.env.SECRET, {expiresIn: '24h'})
+  return jwt.sign(
+    // data payload
+    { user },
+    process.env.SECRET,
+    { expiresIn: '24h' }
+  );
 }
-
-
-
-module.exports = {create, login, checkToken}
